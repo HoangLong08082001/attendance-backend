@@ -1,0 +1,116 @@
+/* Header styling */
+header {
+  color: white;
+  padding: 30px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+header h1:hover {
+  cursor: pointer;
+}
+
+/* Layout structure */
+.main-layout {
+  display: flex;
+}
+
+/* Navigation menu styling */
+nav {
+  width: 20%;
+  background-color: rgb(133, 113, 247)  ;
+  padding: 10px;
+  height: 120vh; /* Kéo dài nav hết chiều cao trang */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;    
+  top: 0;
+  left: 0;
+}
+
+nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li {
+  margin-bottom: 10px;
+  position: relative; /* Thêm thuộc tính này để menu con (dropdown) được định vị đúng */
+}
+
+/* Buttons in the navigation */
+nav ul li button {
+  background-color: rgb(133, 113, 247);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: 50px;
+}
+
+nav ul li button i {
+  margin-right: 5%;
+}
+
+nav ul li button:hover {
+  background-color: rgb(192, 210, 233);
+  color: rgb(0, 102, 255);
+}
+
+nav ul li button.fa-user-signout {
+  background-color: #DD0000;
+}
+
+nav ul li button.fa-user-signout:hover {
+  background-color: #880000;
+  color: #ffffff;
+}
+
+.collapse {
+  display: none; 
+  padding: 10px;
+  background-color: rgb(186, 176, 243) !important;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 5px;
+} cssdd
+
+.cssdd{
+  background-color: rgb(186, 176, 243) !important;
+}
+
+.collapse.show {
+  display: block; 
+}
+
+.collapse-header {
+  font-weight: bold; 
+  margin-bottom: 5px; 
+  color: #333;
+}
+
+.collapse-item {
+  display: block; 
+  padding: 8px 10px; 
+  color: #ffffff; 
+  text-decoration: none; 
+  border-radius: 3px; 
+  transition: background-color 0.3s; 
+  font-weight: bold;
+}
+
+.collapse-item:hover {
+  background-color: #f0f0f0; 
+}
+
+.collapse-item:hover {
+  text-decoration: none; 
+}

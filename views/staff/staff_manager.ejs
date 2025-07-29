@@ -1,0 +1,420 @@
+<script>
+    async function callProtectedAPI() {
+      const token = localStorage.getItem("token"); // Lấy token từ localStorage
+    
+      if (!token) {
+        document.getElementById("staffmanagerboardss").style.display = "none"; 
+        window.location.href = "/"; // Chuyển hướng về trang login
+        return;
+      }
+    
+      try {
+        const response = await fetch("/api/admin/protectedRoute", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Gửi token trong Authorization header
+          }
+        });
+    
+        // Nếu API trả về 200 (OK), nghĩa là người dùng có quyền truy cập
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("staffmanagerboardss").style.display = "block";
+     
+        } else if (response.status === 403) {
+          alert("You do not have permission to access this page.");
+          localStorage.removeItem("token"); // Xóa token
+          window.location.href = "/"; // Chuyển hướng về trang login
+        } else {
+          const result = await response.json();
+          console.error(result.message);  
+          window.location.href = "/"; // Chuyển hướng về trang login
+          alert("An unexpected error occurred.");
+        }
+      } catch (error) {
+        console.error("Error while accessing protected route:", error);
+        alert("An error occurred. Please try again later.");
+      }
+    }
+    
+    // Chỉ tải nội dung sau khi đã xác nhận quyền truy cập
+    document.addEventListener("DOMContentLoaded", callProtectedAPI);
+      </script> 
+<script>
+    const token = localStorage.getItem("token"); // Lấy token từ localStorage
+
+    $(document).ready(function() {
+        // Gọi API để tải danh sách nhân viên
+        $.ajax({
+            url: '/api/attendance/getstaffforadmin',
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            success: function(response) {
+                if (response && response.staff && Array.isArray(response.staff)) {
+                    const data = response.staff;
+                    data.forEach(staff => {
+                        $('#dataTable tbody').append(`
+                            <tr>
+                                <td>${staff.id_staff}</td>
+                                <td>${staff.name}</td>
+                                <td>${staff.email}</td>
+                                <td>${new Date(staff.birth).toLocaleDateString()}</td>
+                                <td>${staff.phone}</td>
+                                <td>${staff.description_ip || 'N/A'}</td>
+                                <td>${staff.role.name_role || 'N/A'}</td>
+                                <td>${staff.token_notification || 'N/A'}</td>
+                                <td>
+                                    <button class="badge badge-danger" onclick="confirmCancelIP('${staff.id_staff}')">Hủy liên kết thiết bị</button>
+                                    <button class="badge badge-danger" onclick="confirmCancelAccount('${staff.id_staff}')">Hủy tài khoản</button>
+                                    <button class="badge badge-info phanquyentk" onclick="openRoleSelectionModal('${staff.id_staff}')">Cấp quyền</button>
+                                    <button class="badge badge-info resetmatkhau" onclick="confirmResetPassword('${staff.id_staff}')">Reset mật khẩu</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                    callProtectedAPI();
+                    $('#dataTable').DataTable(); // Khởi tạo DataTable
+                    logData = data; // Lưu dữ liệu cho export
+
+                } else {
+                    console.error('Dữ liệu không hợp lệ:', response);
+                } 
+            },
+            error: function(err) {
+                console.error('Lỗi khi gọi API:', err);
+            }
+            
+        });
+
+        // Bắt sự kiện click để xuất file Excel
+        $('#download_log').on('click', function() {
+            exportToExcel(logData);
+        });
+
+    });
+
+    
+    async function callProtectedAPI() {
+  const token = localStorage.getItem("token"); // Lấy token từ localStorage
+
+  try {
+    const response = await fetch("/api/admin/protectedRoute", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` // Gửi token trong Authorization header
+      }
+    });
+
+    // Nếu API trả về 200 (OK), nghĩa là người dùng có quyền truy cập
+    if (response.ok) {
+      const result = await response.json();      
+      if(result.staff_update === true){
+        $(".phanquyentk").each(function() {
+          this.style.display = "inline-block"; // Hoặc giá trị khác nếu cần
+        });
+      } else {
+        $(".phanquyentk").each(function() {
+          this.style.display = "none";
+        });
+      } 
+      if(result.userName == "admin"){
+        $(".resetmatkhau").each(function() {
+          this.style.display = "inline-block"; // Hoặc giá trị khác nếu cần
+        });
+      } else {
+        $(".resetmatkhau").each(function() {
+          this.style.display = "none";
+        });
+      } 
+    } 
+  } catch (error) {
+    console.error("Error while accessing protected route:", error);
+    alert("An error occurred. Please try again later.");
+  }
+}
+
+    function exportToExcel(data) {
+        const rows = data.map(staff => [
+            staff.id_staff,
+            staff.name,
+            staff.email,
+            new Date(staff.birth).toLocaleDateString(),
+            staff.phone,
+            staff.description_ip || 'N/A',
+            staff.role.name_role || 'N/A'
+        ]);
+        rows.unshift(['Mã nhân viên', 'Họ và tên', 'Email', 'Ngày sinh', 'Số điện thoại', 'Thiết bị liên kết', 'Vai trò']);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(rows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Log Data');
+        XLSX.writeFile(workbook, 'Danhsachnhanvien.xlsx');
+    }
+
+    function confirmCancelAccount(staffId) {
+  // Hiển thị popup xác nhận
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = "Bạn có muốn hủy tài khoản này không ?";
+
+  // Gắn sự kiện cho nút Đồng ý
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function() {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Thực hiện gọi API
+    $.ajax({
+      url: '/api/attendance/cancelaccount',
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify({ staffId }),
+      success: function() {
+        showResultPopup('Thành công', 'Hủy tài khoản thành công.', function() {
+          location.reload(); // Reload trang chỉ khi nhấn OK trên popup kết quả
+        });
+      },
+      error: function(err) {
+        console.error('Lỗi khi hủy tài khoản:', err);
+        showResultPopup('Thất bại', 'Hủy tài khoản thất bại.', function() {
+          // Không reload khi thất bại, bạn có thể tùy chỉnh hành động ở đây nếu cần
+        });
+      }
+    });
+  };
+}
+
+function confirmCancelIP(staffId) {
+  // Hiển thị popup xác nhận
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = "Bạn muốn hủy liên kết thiết bị của tài khoản này không?";
+
+  // Gắn sự kiện cho nút Đồng ý
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function() {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Thực hiện gọi API
+    $.ajax({
+      url: '/api/attendance/cancelstaffip',
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify({ staffId }),
+      success: function() {
+        showResultPopup('Thành công', 'Hủy liên kết thiết bị thành công.', function() {
+          location.reload(); // Reload trang sau khi nhấn OK trên popup kết quả
+        });
+      },
+      error: function(err) {
+        console.error('Lỗi khi hủy liên kết thiết bị:', err);
+        showResultPopup('Thất bại', 'Hủy liên kết thiết bị thất bại.', null);
+      }
+    });
+  };
+}
+
+function confirmResetPassword(staffId) {
+  // Hiển thị popup xác nhận
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = "Bạn muốn reset mật khẩu của nhân viên này không?";
+
+  // Gắn sự kiện cho nút Đồng ý
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function() {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Thực hiện gọi API
+    $.ajax({
+      url: '/api/attendance/resetpassword',
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify({ userId: staffId }),
+      success: function() {
+        showResultPopup('Thành công', 'Reset mật khẩu thành công.', function() {
+          location.reload(); // Reload trang sau khi nhấn OK trên popup kết quả
+        });
+      },
+      error: function(err) {
+        console.error('Reset mật khẩu thất bại:', err);
+        showResultPopup('Thất bại', 'Reset mật khẩu thất bại.', null);
+      }
+    });
+  };
+}
+    function openRoleSelectionModal(staffId) {
+        // Tải danh sách role
+        $.ajax({
+            url: '/api/attendance/listroleforadmin',
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            success: function(response) {
+                const roles = response.role || [];
+                const roleSelect = $("#roleSelect");
+                roleSelect.empty();
+
+                roles.forEach(role => {
+                    roleSelect.append(`<option value="${role.role_id}">${role.name_role}</option>`);
+                });
+
+                $("#roleSelectionModal").show();
+                $("#confirmRoleButton").off('click').on('click', function() {
+                    confirmRoleAccount(staffId);
+                });
+            },
+            error: function(err) {
+                console.error("Lỗi khi tải danh sách role:", err);
+                alert("Không thể tải danh sách quyền.");
+            }
+        });
+    }
+
+    function confirmRoleAccount(staffId) {
+  const roleId = $("#roleSelect").val();
+  if (!roleId) {
+    // Hiển thị popup thông báo lỗi
+    showResultPopup('Lỗi', 'Vui lòng chọn tên role.', null);
+    return;
+  }
+
+  // Hiển thị popup xác nhận
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = "Bạn muốn cấp quyền cho tài khoản này không?";
+
+  // Gắn sự kiện cho nút Đồng ý
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function() {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Thực hiện gọi API
+    $.ajax({
+      url: '/api/attendance/updateroleforstaff',
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify({ staffId, roleId }),
+      success: function() {
+        showResultPopup('Thành công', 'Cấp quyền thành công.', function() {
+          location.reload(); // Reload trang sau khi nhấn OK trên popup kết quả
+        });
+      },
+      error: function(err) {
+        console.error('Lỗi khi cấp quyền:', err);
+        showResultPopup('Thất bại', 'Cấp quyền thất bại.', null);
+      }
+    });
+  };
+}
+
+    function closeRoleSelectionModal() {
+        $("#roleSelectionModal").hide();
+    }
+</script>
+
+<!-- Modal chọn role -->
+<div id="roleSelectionModal" style="display: none; position: fixed; z-index: 4; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgb(34, 29, 25); padding: 20px; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+  <h3>Chọn quyền</h3>
+  <select id="roleSelect" style="width: 100%;">
+    <!-- Các option sẽ được chèn vào từ Ajax -->
+  </select>
+  <br><br>
+  <button id="confirmRoleButton" style="background: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 4px;">Xác nhận</button>
+  <button onclick="closeRoleSelectionModal()" style="background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px;">Hủy</button>
+</div>
+
+
+<main class="container-fluid page-body-wrapper" style="margin-top: 4%;display: none;" id="staffmanagerboardss">
+      <div class="content-wrapper">
+        <div id="content" style="margin-top: 2%;">
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <h1 class="h3 mb-2 text-gray-800">Quản lí nhân viên</h1>
+
+                <!-- DataTales Example -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary" id="download_log" style="cursor: pointer; margin-top: 1.5%;">Tải bản danh sách nhân viên</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã nhân viên</th>
+                                        <th>Họ và tên</th>
+                                        <th>Email</th>
+                                        <th>Ngày sinh</th>
+                                        <th>Số điện thoại</th>
+                                        <th>Thiết bị</th>
+                                        <th>Vai trò</th>
+                                        <th>Token thông báo</th>
+                                        <th>Chức năng</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                        <th>Mã nhân viên</th>
+                                        <th>Họ và tên</th>
+                                        <th>Email</th>
+                                        <th>Ngày sinh</th>
+                                        <th>Số điện thoại</th>
+                                        <th>Thiết bị</th>
+                                        <th>Vai trò</th>
+                                        <th>Token thông báo</th>
+                                        <th>Chức năng</th>
+                                    </tr>
+                                </tfoot>
+                                <tbody>
+                                    <!-- Dữ liệu sẽ được chèn vào đây từ Ajax -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+      </div>
+      <!-- content-wrapper ends -->
+</main>
+
+<script src="vendor/jquery.min.js"></script>
+
+<script src="vendor/jquery.easing.min.js"></script>
+
+<script src="js/sb-admin-2.min.js"></script>
+
+<script src="vendor/jquery.dataTables.min.js"></script>
+<script src="vendor/dataTables.bootstrap4.min.js"></script>
+<script src="js/navigation.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/locales/bootstrap-datepicker.vi.min.js"></script>

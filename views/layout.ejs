@@ -1,0 +1,277 @@
+<!-- views/layout.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <meta property="og:title" content="<%= title %>" />
+    <meta
+      name="description"
+      content="Trang quản trị của ứng dụng chấm công APEC GLOBAL"
+    />
+    <meta
+      property="og:description"
+      content="Trang quản trị của ứng dụng chấm công APEC GLOBAL"
+    />
+    <meta
+      property="og:image"
+      content="https://apectech-hrm.netlify.app/assets/images/iconlogo.png"
+    />
+    <meta property="og:url" content="https://apectech-hrm.netlify.app" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:description"
+      content="Trang quản trị của ứng dụng chấm công APEC GLOBAL"
+    />
+    <meta
+      name="twitter:image"
+      content="https://apectech-hrm.netlify.app/assets/images/iconlogo.png"
+    />
+
+    <link rel="stylesheet" href="assets/vendors/css/vendor.bundle.base.css" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="../../assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    <link rel="stylesheet" href="../../assets/css/style.css" />
+    <link rel="shortcut icon" href="../../assets/images/iconlogo.png" />
+    <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
+    <script src="../../assets/vendors/chart.js/Chart.min.js"></script>
+    <script src="../../assets/vendors/progressbar.js/progressbar.min.js"></script>
+    <script src="../../assets/vendors/jvectormap/jquery-jvectormap.min.js"></script>
+    <script src="../../assets/vendors/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="../../assets/vendors/owl-carousel-2/owl.carousel.min.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="../../assets/js/off-canvas.js"></script>
+    <script src="../../assets/js/hoverable-collapse.js"></script>
+    <script src="../../assets/js/settings.js"></script>
+    <script src="../../assets/js/todolist.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+      * {
+        font-family: Arial, sans-serif;
+      }
+      /* Pop-up overlay */
+      .popup {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Pop-up content */
+      .popup-content {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        width: 300px;
+        text-align: center;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.3s ease-in-out;
+      }
+
+      /* Buttons */
+      .popup-buttons {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 15px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+      }
+
+      /* Animation */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .row label {
+        width: 100%;
+        color: white;
+      }
+      .row label input {
+        color: white;
+      }
+      .row label input:focus {
+        color: white;
+      }
+      .row label select {
+        color: white;
+      }
+      .row label select:focus {
+        color: white;
+      }
+      #dataTable_next .page-link {
+        visibility: hidden;
+        font-size: 15px;
+        color: black;
+        justify-content: center;
+      }
+      #dataTable_next .page-link::before {
+        content: "Kế tiếp";
+        visibility: visible;
+        margin-right: -27px;
+      }
+      #dataTable_next {
+        background-color: white;
+        border-top-right-radius: 7px;
+        border-bottom-right-radius: 7px;
+      }
+
+      #dataTable_previous .page-link {
+        visibility: hidden;
+        font-size: 15px;
+        color: black;
+        justify-content: center;
+      }
+      #dataTable_previous .page-link::before {
+        content: "Trước đó";
+        visibility: visible;
+        margin-right: -57px;
+      }
+      #dataTable_previous {
+        background-color: white;
+        border-top-left-radius: 7px;
+        border-bottom-left-radius: 7px;
+      }
+      .odd {
+        color: white;
+      }
+      .even {
+        color: rgb(234, 215, 237);
+      }
+      @media (max-width: 1024px) {
+        .layoutmobile {
+          margin-top: 50px;
+        }
+        .t {
+          max-width: 400px !important;
+        }
+        .t h5 {
+          width: 300px !important;
+        }
+      }
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top: 5px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+    </style>
+
+    <script>
+      // Hàm hiển thị popup kết quả
+      function showResultPopup(title, message, onOkCallback) {
+        const resultPopup = document.getElementById("resultPopup");
+        const resultTitle = document.getElementById("resultTitle");
+        const resultMessage = document.getElementById("resultMessage");
+        const okButton = document.getElementById("okButton"); // Nút OK trên popup kết quả
+
+        resultTitle.innerText = title;
+        resultMessage.innerText = message;
+        resultPopup.style.display = "flex";
+
+        // Gắn sự kiện cho nút OK để gọi callback và đóng popup
+        okButton.onclick = function () {
+          closePopup("resultPopup");
+          if (typeof onOkCallback === "function") {
+            onOkCallback(); // Gọi callback nếu có
+          }
+        };
+      }
+
+      // Hàm đóng popup
+      function closePopup(popupId) {
+        const popup = document.getElementById(popupId);
+        popup.style.display = "none";
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Popup xác nhận -->
+    <div id="confirmPopup" class="popup">
+      <div class="popup-content">
+        <h2 style="color: #dc3545">Xác nhận</h2>
+        <p id="titlepopupconfirm" style="color: black"></p>
+        <div class="popup-buttons">
+          <button id="confirmYes" class="btn btn-success">Đồng ý</button>
+          <button
+            id="confirmNo"
+            class="btn btn-danger"
+            onclick="closePopup('confirmPopup')"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup thông báo -->
+    <div id="resultPopup" class="popup">
+      <div class="popup-content">
+        <h2 id="resultTitle" style="color: black"></h2>
+        <p id="resultMessage" style="color: rgb(139, 66, 247)"></p>
+        <button id="okButton" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+
+    <%- include("partials/header") %>
+
+    <div style="display: flex" class="layoutmobile">
+      <%- include("partials/navbar") %> <%- include(content) %>
+    </div>
+  </body>
+</html>

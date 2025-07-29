@@ -1,0 +1,394 @@
+<script>
+    async function callProtectedAPI() {
+      const token = localStorage.getItem("token"); // Lấy token từ localStorage
+    
+      if (!token) {
+        document.getElementById("settinglocationboardss").style.display = "none"; 
+        window.location.href = "/"; // Chuyển hướng về trang login
+        return;
+      }
+    
+      try {
+        const response = await fetch("/api/admin/protectedRoute", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Gửi token trong Authorization header
+          }
+        });
+    
+        // Nếu API trả về 200 (OK), nghĩa là người dùng có quyền truy cập
+        if (response.ok) {
+          const result = await response.json();
+          document.getElementById("settinglocationboardss").style.display = "block"; 
+
+        } else if (response.status === 403) {
+          alert("You do not have permission to access this page.");
+          localStorage.removeItem("token"); // Xóa token
+          window.location.href = "/"; // Chuyển hướng về trang login
+        } else {
+          const result = await response.json();
+          console.error(result.message);  
+          window.location.href = "/"; // Chuyển hướng về trang login
+          alert("An unexpected error occurred.");
+        }
+      } catch (error) {
+        console.error("Error while accessing protected route:", error);
+        alert("An error occurred. Please try again later.");
+      }
+    }
+    
+    // Chỉ tải nội dung sau khi đã xác nhận quyền truy cập
+    document.addEventListener("DOMContentLoaded", callProtectedAPI);
+      </script> 
+    <style>
+  /* Căn giữa form trên màn hình */
+  #locationForm {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #262424;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    z-index: 1100;
+  }
+  
+  /* Tiêu đề của form */
+  #formTitle {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  /* Style cho các trường nhập liệu */
+  #locationForm label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+  }
+  
+  #locationForm input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  /* Nút xác nhận và hủy */
+  #locationForm button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  
+  #locationForm button:first-of-type {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  #locationForm button:last-of-type {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  /* Dropdown trong bảng */
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #357884;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+  
+  .dropdown-content button {
+    background-color: transparent;
+    border: none;
+    padding: 8px 16px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+  
+  .dropdown-content button:hover {
+    background-color: #1d6259;
+  }
+  </style>
+<script>
+    const token = localStorage.getItem("token");
+    let isEditMode = false; 
+    let currentLocationId = null; 
+    
+    $(document).ready(function() {
+      $.ajax({
+        url: '/api/attendance/getsettinglocation',
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        success: function(response) {
+          if (response && response.location && Array.isArray(response.location)) {
+            const data = response.location;
+            data.forEach(location => {
+              $('#dataTable tbody').append(`
+                <tr>
+                  <td>${location.id_location}</td>
+                  <td>${location.name_location}</td>
+                  <td>${location.longitude}</td>
+                  <td>${location.latitude || 'N/A'}</td>
+                  <td>${location.created_at || 'N/A'}</td>
+                  <td>${location.updated_at || 'N/A'}</td>
+                  <td>
+                    <div class="dropdown">
+                      <button class="dropbtn">Hành động</button>
+                      <div class="dropdown-content">
+                        <button class="badge badge-success" onclick="openForm('${location.id_location}', '${location.name_location}', '${location.longitude}', '${location.latitude}')">Đổi thông tin</button>
+                        <button class="badge badge-danger" onclick="confirmDeleteLocation('${location.id_location}')">Xóa vị trí</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              `);
+            });
+            $('#dataTable').DataTable();
+          } else {
+            console.error('Dữ liệu không phải là mảng hoặc phản hồi không chứa location:', response);
+          }
+        },
+        error: function(err) {
+          console.error('Lỗi khi gọi API:', err);
+        }
+      });
+    });
+    
+    // Hàm mở form nhập thông tin và chuyển chế độ chỉnh sửa hoặc tạo mới
+    function openForm(id = '', name = '', longitude = '', latitude = '') {
+isEditMode = !!id;
+currentLocationId = id;
+$('#formTitle').text(isEditMode ? 'Chỉnh sửa địa điểm' : 'Tạo mới địa điểm');
+$('#locationId').val(id);
+$('#locationName').val(name);
+$('#longitude').val(longitude);
+$('#latitude').val(latitude);
+$('#overlay').show();  // Hiển thị lớp nền mờ
+$('#locationForm').show(); // Hiển thị form ở giữa màn hình
+}
+
+function closeForm() {
+$('#locationForm').hide();
+$('#overlay').hide(); // Ẩn lớp nền mờ
+currentLocationId = null;
+isEditMode = false;
+}
+
+    // Hàm gửi dữ liệu khi nhấn nút "Xác nhận"
+    function submitLocation() {
+  const id = $('#locationId').val();
+  const name = $('#locationName').val();
+  const longitude = $('#longitude').val();
+  const latitude = $('#latitude').val();
+
+  if (!name || !longitude || !latitude) {
+    showResultPopup('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
+    return;
+  }
+
+  const apiEndpoint = isEditMode ? '/api/attendance/updateSettingLocation' : '/api/attendance/insertsettinglocation';
+  const data = {
+    id_location: id,
+    name: name,
+    lonPattern: longitude,
+    latInput: latitude
+  };
+
+  if (isEditMode) data.id_location = currentLocationId;
+
+  // Hiển thị popup xác nhận trước khi gửi yêu cầu
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = isEditMode 
+    ? "Bạn muốn cập nhật thông tin địa điểm này không?" 
+    : "Bạn muốn thêm địa điểm này không?";
+
+  // Xử lý khi người dùng nhấn "Đồng ý"
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function () {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Gửi yêu cầu API
+    $.ajax({
+      url: apiEndpoint,
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify(data),
+      success: function (response) {
+        showResultPopup('Thành công', isEditMode 
+          ? 'Cập nhật địa điểm thành công.' 
+          : 'Thêm địa điểm thành công.', 
+          function () {
+            location.reload(); // Làm mới trang sau khi thành công
+          }
+        );
+      },
+      error: function (err) {
+        console.error('Lỗi khi gửi yêu cầu:', err);
+        if (err.responseJSON && err.responseJSON.message) {
+          showResultPopup('Lỗi', `Lỗi: ${err.responseJSON.message}`);
+        } else {
+          showResultPopup('Lỗi', 'Lỗi khi thực hiện thao tác.');
+        }
+      }
+    });
+
+    closeForm(); // Đóng form nếu cần thiết
+  };
+}
+
+    // Hàm xác nhận và xóa địa điểm
+    function confirmDeleteLocation(id) {
+  // Hiển thị popup xác nhận
+  const confirmPopup = document.getElementById('confirmPopup');
+  confirmPopup.style.display = 'flex';
+  const confirmPopups = document.getElementById('titlepopupconfirm');
+  confirmPopups.innerText = "Bạn có chắc chắn muốn xóa địa điểm này không?";
+
+  // Xử lý khi người dùng nhấn "Đồng ý"
+  const confirmYesButton = document.getElementById('confirmYes');
+  confirmYesButton.onclick = function () {
+    closePopup('confirmPopup'); // Đóng popup xác nhận
+
+    // Gửi yêu cầu API để xóa địa điểm
+    $.ajax({
+      url: '/api/attendance/deletesettinglocation',
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      data: JSON.stringify({ id_location: id }),
+      success: function (response) {
+        showResultPopup('Thành công', 'Xóa địa điểm thành công.', function () {
+          location.reload(); // Reload trang sau khi xóa thành công
+        });
+      },
+      error: function (err) {
+        console.error('Lỗi khi xóa địa điểm:', err);
+        showResultPopup('Thất bại', 'Xóa địa điểm thất bại.');
+      }
+    });
+  };
+
+  // Xử lý khi người dùng nhấn "Hủy"
+  const confirmNoButton = document.getElementById('confirmNo');
+  confirmNoButton.onclick = function () {
+    closePopup('confirmPopup'); // Đóng popup khi hủy
+  };
+}
+
+    </script>
+
+<main class="container-fluid page-body-wrapper" style="margin-top: 4%;display: none;" id="settinglocationboardss">
+      <div class="content-wrapper">
+        <div id="content" style="margin-top: 2%;">
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+              <div id="overlay" onclick="closeForm()"></div>
+
+<!-- Form nhập liệu vị trí -->
+<div id="locationForm">
+  <h3 id="formTitle">Nhập thông tin vị trí</h3>
+  <label for="locationId">Mã địa điểm:</label>
+  <input type="text" id="locationId"><br>
+  <label for="locationName">Tên địa điểm:</label>
+  <input type="text" id="locationName"><br>
+  <label for="longitude">Kinh độ:</label>
+  <input type="text" id="longitude"><br>
+  <label for="latitude">Vĩ độ:</label>
+  <input type="text" id="latitude"><br>
+  <button onclick="submitLocation()">Xác nhận</button>
+  <button onclick="closeForm()">Hủy</button>
+</div>
+
+                <!-- Page Heading -->
+                <h1 class="h3 mb-2 text-gray-800">Quản lí vị trí</h1>
+
+                <!-- DataTales Example -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <button onclick="openForm()">Tạo mới địa điểm</button>
+
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                      <th>Mã trụ sở</th>
+                                      <th>Tên trụ sở</th>
+                                      <th>Longitude</th>
+                                      <th>Latgitude</th>
+                                      <th>Ngày tạo</th>
+                                      <th>Ngày cập nhật</th>
+                                      <th>Chức năng</th>
+                                    </tr>
+                                </thead>
+                                <tfoot>
+                                    <tr>
+                                      <th>Mã trụ sở</th>
+                                      <th>Tên trụ sở</th>
+                                      <th>Longitude</th>
+                                      <th>Latgitude</th>
+                                      <th>Ngày tạo</th>
+                                      <th>Ngày cập nhật</th>
+                                      <th>Chức năng</th>
+                                    </tr>
+                                </tfoot>
+                                <tbody>
+                                    <!-- Dữ liệu sẽ được chèn vào đây từ Ajax -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+      </div>
+      <!-- content-wrapper ends -->
+</main>
+
+<script src="vendor/jquery.min.js"></script>
+
+<script src="vendor/jquery.easing.min.js"></script>
+
+<script src="js/sb-admin-2.min.js"></script>
+
+<script src="vendor/jquery.dataTables.min.js"></script>
+<script src="vendor/dataTables.bootstrap4.min.js"></script>
+<script src="js/navigation.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/locales/bootstrap-datepicker.vi.min.js"></script>
